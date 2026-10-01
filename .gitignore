@@ -1,0 +1,23 @@
+# Private SSH keys
+*.key
+*.pem
+id_rsa
+id_ed25519
+
+# Secrets and environment files
+.env
+.env.*
+secrets/
+
+# Backup archives
+backups/
+*.tar.gz
+*.zip
+*.bak
+
+# Editor settings
+.vscode/
+
+# Temporary files
+*.tmp
+*.log
