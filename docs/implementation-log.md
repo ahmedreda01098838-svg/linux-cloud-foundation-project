@@ -82,3 +82,68 @@ Both VMs use DHCP on the libvirt network.
   ```
 
   Result: 3 packets transmitted, 3 received, 0% packet loss.
+
+## Phase 4: Users and secure SSH
+
+- Created administrative user `webadmin` on web01.
+- Added `webadmin` to the `wheel` group.
+- Generated an Ed25519 SSH key pair on client01.
+- Installed the public key for `webadmin` on web01.
+- Verified passwordless SSH key authentication from client01 to web01.
+- Changed the SSH listener port from 22 to 2028.
+- Allowed TCP port 2028 in firewalld.
+- Allowed SELinux to bind sshd to TCP port 2028 using:
+
+  ```bash
+  sudo semanage port -a -t ssh_port_t -p tcp 2028
+  ```
+
+- Disabled direct root SSH login:
+
+  ```text
+  PermitRootLogin no
+  ```
+
+- Disabled SSH password authentication:
+
+  ```text
+  PasswordAuthentication no
+  ```
+
+- Enabled public key authentication:
+
+  ```text
+  PubkeyAuthentication yes
+  ```
+
+- Validated the SSH configuration with:
+
+  ```bash
+  sudo sshd -t
+  ```
+
+- Restarted and verified sshd:
+
+  ```bash
+  sudo systemctl restart sshd
+  sudo systemctl status sshd --no-pager
+  ```
+
+- Verified that sshd listens on port 2028:
+
+  ```bash
+  sudo ss -ltnp | grep sshd
+  ```
+
+- Verified secure SSH access from client01:
+
+  ```bash
+  ssh -p 2028 webadmin@192.168.122.160 'whoami; hostname'
+  ```
+
+  Result:
+
+  ```text
+  webadmin
+  web01.lab.local
+  ```
