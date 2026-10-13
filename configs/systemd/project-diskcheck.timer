@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Linux Cloud Foundation disk usage check daily
+
+[Timer]
+OnCalendar=*-*-* 09:00:00
+Persistent=true
+Unit=project-diskcheck.service
+
+[Install]
+WantedBy=timers.target

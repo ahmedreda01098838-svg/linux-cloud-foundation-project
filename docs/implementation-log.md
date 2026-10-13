@@ -397,3 +397,38 @@ Both VMs use DHCP on the libvirt network.
   OK: /srv usage is 3% (available: 7.8G)
   Exit code: 0
   ```
+- Created `/etc/systemd/system/project-diskcheck.service`.
+- Created `/etc/systemd/system/project-diskcheck.timer`.
+- The timer runs the disk check daily at 09:00.
+- Enabled and started the timer:
+
+  ```bash
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now project-diskcheck.timer
+  ```
+
+- Manually triggered the service:
+
+  ```bash
+  sudo systemctl start project-diskcheck.service
+  ```
+
+- Verified successful execution:
+
+  ```text
+  Process: 4720 ExecStart=/usr/local/sbin/disk-check.sh (code=exited, status=0/SUCCESS)
+  ```
+
+- Verified the scheduled timer:
+
+  ```text
+  NEXT: Sat 2026-10-10 09:00:00 EEST
+  UNIT: project-diskcheck.timer
+  ```
+
+- Verified new log entries:
+
+  ```text
+  2026-10-09T22:54:03+03:00 OK: / usage is 18% (available: 13G)
+  2026-10-09T22:54:03+03:00 OK: /srv usage is 3% (available: 7.8G)
+  ```
