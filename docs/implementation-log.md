@@ -271,3 +271,84 @@ Both VMs use DHCP on the libvirt network.
   ```
 
 - Confirmed that client01 receives the custom project page instead of the default Fedora test page.
+
+## Phase 7: HTTPS with self-signed TLS
+
+- Created a self-signed TLS certificate for `myserver.test`:
+
+  ```bash
+  sudo openssl req -x509 -nodes -days 365 \
+    -newkey rsa:2048 \
+    -keyout /etc/nginx/ssl/myserver.test.key \
+    -out /etc/nginx/ssl/myserver.test.crt \
+    -subj "/CN=myserver.test/O=Linux Cloud Foundation/C=EG"
+  ```
+
+- Certificate details:
+
+  ```text
+  subject=CN=myserver.test, O=Linux Cloud Foundation, C=EG
+  notBefore=Oct  9 19:18:56 2026 GMT
+  notAfter=Oct  9 19:18:56 2027 GMT
+  ```
+
+- Set private key permissions to `600` and certificate permissions to `644`.
+- Created `/etc/nginx/conf.d/myserver.test.conf`.
+- Configured NGINX to redirect HTTP requests on port 80 to HTTPS.
+- Configured NGINX to serve HTTPS on port 443 using TLSv1.2 and TLSv1.3.
+- Enabled HTTP/2.
+- Validated the NGINX configuration:
+
+  ```bash
+  sudo nginx -t
+  ```
+
+  Result:
+
+  ```text
+  nginx: configuration file /etc/nginx/nginx.conf test is successful
+  ```
+
+- Reloaded NGINX:
+
+  ```bash
+  sudo systemctl reload nginx
+  ```
+
+- Enabled the HTTPS service in firewalld:
+
+  ```bash
+  sudo firewall-cmd --permanent --add-service=https
+  sudo firewall-cmd --reload
+  ```
+
+- Verified HTTPS access from client01:
+
+  ```bash
+  curl -kI https://myserver.test
+  curl -k https://myserver.test
+  ```
+
+  Result:
+
+  ```text
+  HTTP/2 200
+  server: nginx/1.30.5
+  ```
+
+  The custom project page was returned successfully.
+
+- Verified automatic HTTP-to-HTTPS redirection:
+
+  ```bash
+  curl -I http://myserver.test
+  ```
+
+  Result:
+
+  ```text
+  HTTP/1.1 301 Moved Permanently
+  Location: https://myserver.test/
+  ```
+
+- Phase 7 completed successfully.
