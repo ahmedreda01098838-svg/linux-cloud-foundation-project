@@ -272,7 +272,7 @@ Both VMs use DHCP on the libvirt network.
 
 - Confirmed that client01 receives the custom project page instead of the default Fedora test page.
 
-## Phase 7: HTTPS with self-signed TLS
+## HTTPS stretch goal: self-signed TLS
 
 - Created a self-signed TLS certificate for `myserver.test`:
 
@@ -351,4 +351,49 @@ Both VMs use DHCP on the libvirt network.
   Location: https://myserver.test/
   ```
 
-- Phase 7 completed successfully.
+- HTTPS stretch goal completed successfully.
+
+## Phase 7: Storage and backup design
+
+- Reviewed storage on web01:
+
+  ```text
+  /    15G total, 13G available, 18% used
+  /srv  8G total, 7.8G available, 3% used
+  LVM free space: 4.51G
+  ```
+
+- `/srv` is a separate XFS filesystem on the `fedora-webdata` LVM logical volume.
+- Selected `/srv/backups` as the local backup staging directory.
+- Created `/srv/backups` with ownership `root:webadmin` and permissions `750`.
+- Set a persistent SELinux context for the backup directory:
+
+  ```bash
+  sudo semanage fcontext -a -t var_t '/srv/backups(/.*)?'
+  sudo restorecon -Rv /srv/backups
+  ```
+
+- Verified the final context:
+
+  ```text
+  unconfined_u:object_r:var_t:s0 /srv/backups
+  ```
+
+- Created `/usr/local/sbin/disk-check.sh`.
+- The script checks `/` and `/srv` usage.
+- It logs an OK entry when usage is below 80%.
+- It logs a WARNING entry and returns exit code 1 when usage reaches 80%.
+- It logs an ERROR entry and returns exit code 2 if a monitored mountpoint is unavailable.
+- Created the log directory and file:
+
+  ```text
+  /var/log/linux-cloud-foundation/disk-check.log
+  ```
+
+- Tested the script successfully:
+
+  ```text
+  OK: / usage is 18% (available: 13G)
+  OK: /srv usage is 3% (available: 7.8G)
+  Exit code: 0
+  ```
