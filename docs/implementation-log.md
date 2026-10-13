@@ -147,3 +147,67 @@ Both VMs use DHCP on the libvirt network.
   webadmin
   web01.lab.local
   ```
+
+## Phase 5: NFS access control and permissions
+
+- Created the `nfsusers` group on web01 and client01.
+- Created the `nfsuser` user on web01 and added it to `nfsusers`.
+- Added `webadmin` and `aamd` to the `nfsusers` group.
+- Set `/srv/nfs-share` ownership to `root:nfsusers`.
+- Set `/srv/nfs-share` permissions to `2770` so new files inherit the `nfsusers` group.
+- Corrected the SELinux context from `httpd_sys_content_t` to `public_content_rw_t`:
+
+  ```bash
+  sudo semanage fcontext -a -t public_content_rw_t '/srv/nfs-share(/.*)?'
+  sudo restorecon -Rv /srv/nfs-share
+  ```
+
+- Enabled the SELinux boolean required for NFS writes:
+
+  ```bash
+  sudo setsebool -P nfsd_anon_write on
+  ```
+
+- Changed the NFS export from read-only to read-write:
+
+  ```text
+  /srv/nfs-share 192.168.122.221(rw,sync,no_subtree_check,root_squash)
+  ```
+
+- Applied the export configuration:
+
+  ```bash
+  sudo exportfs -ra
+  ```
+
+- Replaced the NFSv3 mount with an NFSv4.2 mount to avoid NFSv3 lock-manager port issues:
+
+  ```bash
+  sudo mount -t nfs -o vers=4.2,soft,intr 192.168.122.160:/srv/nfs-share /mnt/nfs-share
+  ```
+
+- Added a persistent mount entry to `/etc/fstab`:
+
+  ```text
+  192.168.122.160:/srv/nfs-share  /mnt/nfs-share  nfs  vers=4.2,soft,intr  0  0
+  ```
+
+- Reloaded systemd after modifying `/etc/fstab`:
+
+  ```bash
+  sudo systemctl daemon-reload
+  ```
+
+- Verified successful NFS write access from client01:
+
+  ```bash
+  touch /mnt/nfs-share/client-write-test.txt
+  echo "NFSv4.2 write test from client01" > /mnt/nfs-share/client-write-test.txt
+  cat /mnt/nfs-share/client-write-test.txt
+  ```
+
+  Result:
+
+  ```text
+  NFSv4.2 write test from client01
+  ```
