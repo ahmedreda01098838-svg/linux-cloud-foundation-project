@@ -211,3 +211,63 @@ Both VMs use DHCP on the libvirt network.
   ```text
   NFSv4.2 write test from client01
   ```
+
+## Phase 6: Web server deployment
+
+- Installed NGINX on web01:
+
+  ```bash
+  sudo dnf install -y nginx
+  ```
+
+- Found that Apache HTTP Server was already using port 80.
+- Disabled and stopped Apache to free port 80:
+
+  ```bash
+  sudo systemctl disable --now httpd
+  ```
+
+- Enabled and started NGINX:
+
+  ```bash
+  sudo systemctl enable --now nginx
+  ```
+
+- Verified that NGINX is running and listening on port 80:
+
+  ```bash
+  sudo systemctl status nginx --no-pager
+  sudo ss -ltnp | grep nginx
+  ```
+
+- Verified that the HTTP service is allowed in firewalld:
+
+  ```bash
+  sudo firewall-cmd --permanent --add-service=http
+  sudo firewall-cmd --reload
+  ```
+
+- Created a custom project page at `/usr/share/nginx/html/index.html`.
+- Verified local access on web01:
+
+  ```bash
+  curl -I http://localhost
+  ```
+
+  Result: `HTTP/1.1 200 OK`
+
+- Verified access from client01 using the local hostname:
+
+  ```bash
+  curl -I http://myserver.test
+  curl http://myserver.test
+  ```
+
+  Result:
+
+  ```text
+  HTTP/1.1 200 OK
+  Server: nginx/1.30.5
+  ```
+
+- Confirmed that client01 receives the custom project page instead of the default Fedora test page.
