@@ -432,3 +432,68 @@ Both VMs use DHCP on the libvirt network.
   2026-10-09T22:54:03+03:00 OK: / usage is 18% (available: 13G)
   2026-10-09T22:54:03+03:00 OK: /srv usage is 3% (available: 7.8G)
   ```
+
+## Phase 8: Verified backup and off-server copy
+
+- Created `/usr/local/sbin/backup.sh` on web01.
+- The script uses `set -euo pipefail`.
+- It creates a timestamped compressed archive in `/srv/backups`.
+- It creates a SHA-256 checksum file for the archive.
+- It logs each step with an ISO 8601 timestamp.
+- It sets restrictive permissions on the archive and checksum.
+- Backup scope:
+
+  ```text
+  /usr/share/nginx/html
+  /etc/nginx/conf.d/myserver.test.conf
+  /usr/local/sbin/disk-check.sh
+  /etc/systemd/system/project-diskcheck.service
+  /etc/systemd/system/project-diskcheck.timer
+  ```
+
+- The TLS private key was intentionally excluded from the backup archive.
+- Verified local checksum integrity:
+
+  ```text
+  /srv/backups/linux-cloud-backup-20261009-230848.tar.gz: OK
+  ```
+
+- Changed backup file ownership to `root:webadmin` and permissions to `640` so `webadmin` can copy the backup over SSH.
+- Copied the archive and checksum to client01 using `scp` over SSH port 2028.
+- Verified the checksum on client01:
+
+  ```text
+  linux-cloud-backup-20261009-230848.tar.gz: OK
+  ```
+
+- Created `/usr/share/nginx/html/restore-test.html` as a harmless test page.
+- Created a new backup containing the test page:
+
+  ```text
+  /srv/backups/linux-cloud-backup-20261009-231511.tar.gz
+  ```
+
+- Verified that the archive contained the test page:
+
+  ```text
+  ./usr/share/nginx/html/restore-test.html
+  ```
+
+- Deleted the test page deliberately.
+- Verified the expected failure:
+
+  ```text
+  HTTP/2 404
+  ```
+
+- Restored the test page from the archive to a temporary directory.
+- Copied it back to `/usr/share/nginx/html`.
+- Restored ownership, permissions, and the SELinux context.
+- Verified successful restoration:
+
+  ```text
+  HTTP/2 200
+  ```
+
+- Confirmed that the restored page returned the expected content.
+- Phase 8 backup and restore test completed successfully.
