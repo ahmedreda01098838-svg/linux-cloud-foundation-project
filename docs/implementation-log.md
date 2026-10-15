@@ -497,3 +497,71 @@ Both VMs use DHCP on the libvirt network.
 
 - Confirmed that the restored page returned the expected content.
 - Phase 8 backup and restore test completed successfully.
+
+## Phase 9: Automation, monitoring, and controlled recovery
+
+- Created `/usr/share/nginx/html/health` with the content `OK`.
+- Verified the health endpoint:
+
+  ```bash
+  curl -kfsS https://localhost/health
+  ```
+
+  Result: `OK`
+
+- Created `/usr/local/sbin/health-check.sh`.
+- The script checks `https://localhost/health`.
+- If the health check passes, it logs an OK entry and exits with code 0.
+- If the health check fails, it logs a WARNING entry.
+- If NGINX is inactive, it performs one controlled restart.
+- After waiting five seconds, it checks the health endpoint again.
+- If NGINX recovers, it logs an OK entry and exits with code 0.
+- If NGINX remains unhealthy, it logs an ERROR entry and exits with code 2.
+- The script does not create an infinite restart loop.
+
+- Created `/etc/systemd/system/project-healthcheck.service`.
+- Created `/etc/systemd/system/project-healthcheck.timer`.
+- The timer runs the health check every minute.
+- Enabled and started the timer:
+
+  ```bash
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now project-healthcheck.timer
+  ```
+
+- Manually triggered the service successfully:
+
+  ```text
+  Process: 5745 ExecStart=/usr/local/sbin/health-check.sh (code=exited, status=0/SUCCESS)
+  ```
+
+- Performed a controlled recovery test:
+
+  ```bash
+  sudo systemctl stop nginx
+  sudo /usr/local/sbin/health-check.sh
+  ```
+
+- Health check log evidence:
+
+  ```text
+  WARNING: NGINX health check failed
+  INFO: attempting controlled NGINX restart
+  OK: NGINX recovered after restart
+  ```
+
+- Verified that NGINX became active again:
+
+  ```text
+  active
+  ```
+
+- Verified that the health endpoint returned `OK` after recovery.
+- Verified the controlled restart in journalctl:
+
+  ```text
+  Stopped nginx.service.
+  Started nginx.service.
+  ```
+
+- Phase 9 automation, monitoring, and controlled recovery completed successfully.

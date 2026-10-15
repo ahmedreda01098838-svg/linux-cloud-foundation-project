@@ -1,0 +1,8 @@
+[Unit]
+Description=Linux Cloud Foundation NGINX health check
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/health-check.sh

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Linux Cloud Foundation NGINX health check every 5 minutes
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Unit=project-healthcheck.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target
