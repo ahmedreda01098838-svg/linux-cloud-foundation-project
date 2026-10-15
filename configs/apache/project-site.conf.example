@@ -1,0 +1,11 @@
+<VirtualHost *:80>
+    ServerName myserver.test
+    DocumentRoot /usr/share/nginx/html
+
+    <Directory /usr/share/nginx/html>
+        Require all granted
+    </Directory>
+
+    ErrorLog /var/log/httpd/project-site-error.log
+    CustomLog /var/log/httpd/project-site-access.log combined
+</VirtualHost>

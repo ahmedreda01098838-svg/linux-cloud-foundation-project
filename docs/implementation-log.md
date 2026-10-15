@@ -565,3 +565,34 @@ Both VMs use DHCP on the libvirt network.
   ```
 
 - Phase 9 automation, monitoring, and controlled recovery completed successfully.
+
+## Phase 10: Apache versus Nginx comparison
+
+- Captured the NGINX baseline:
+
+  ```text
+  nginx: active and enabled
+  listening on ports 80 and 443
+  nginx -t: successful
+  /health: OK
+  main page: HTTP/2 200
+  ```
+
+- Stopped and disabled NGINX temporarily.
+- Installed Apache HTTP Server.
+- Created `/etc/httpd/conf.d/project-site.conf` with
+  `DocumentRoot /usr/share/nginx/html`.
+- Apache initially failed to start because NGINX was still bound to port 80.
+- Stopped NGINX, then Apache started successfully.
+- Apache initially served an old default virtual host from
+  `/etc/httpd/conf.d/linux-cloud-site.conf`.
+- Used `sudo httpd -S` to identify the conflicting default virtual host.
+- Temporarily renamed the old virtual-host file to `.bak`.
+- Apache then served the project page, `/health`, and `restore-test.html`
+  successfully.
+- Temporarily stopped `project-healthcheck.timer` because it automatically
+  restarted NGINX during the comparison.
+- Restored NGINX as the final project web service.
+- Re-enabled the health-check timer.
+- Documented the full comparison in `docs/apache-nginx-comparison.md`.
+- Phase 10 completed successfully.
